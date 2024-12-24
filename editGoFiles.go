@@ -1,4 +1,4 @@
-// program that copies directory tree
+// program that edits directory tree
 
 
 package main
@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 
     tree "goDev/gitEdit/gitEditLib"
     util "github.com/prr123/utility/utilLib"
@@ -96,6 +97,9 @@ func main() {
 		log.Printf("no search or replace string!\n")
 		os.Exit(0)
 	}
+
+	sidx := strings.Index(searchStr, "github.com")
+	if sidx> -1 {log.Fatalf("error -- searchstr includes term github!\n")}
 
 	searchStr = "\"github.com/" + searchStr
 	if dbg {fmt.Printf("actual search: '%s'\n", searchStr)}
