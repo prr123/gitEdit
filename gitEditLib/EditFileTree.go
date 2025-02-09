@@ -204,7 +204,9 @@ func EditImportContent(inData []byte, searchStr, replStr string) (out []byte, er
 
 	dbg := false
     idx := bytes.Index(inData, []byte("import ("))
-    if idx == -1 {return nil, fmt.Errorf("no import statement found!")}
+    if idx == -1 {
+		return inData, nil
+	}
     if dbg {fmt.Printf("found import statement\n")}
     idxend := bytes.Index(inData[idx:], []byte(")"))
     if idxend == -1 {return nil, fmt.Errorf("no end to import statement found!")}
