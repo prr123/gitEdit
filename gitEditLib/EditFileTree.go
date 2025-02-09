@@ -144,6 +144,7 @@ func EditFiles(rootDirnam, newrootDir, searchStr, replStr string) (err error) {
 
     subDirList := make([]fs.DirEntry,0, 100)
     goList := make([]fs.DirEntry,0, 100)
+    notgoList := make([]fs.DirEntry,0, 100)
     dcount :=0
     for i:=0; i<len(entryList); i++ {
         if entryList[i].IsDir() {
@@ -163,7 +164,9 @@ func EditFiles(rootDirnam, newrootDir, searchStr, replStr string) (err error) {
                 match := bytes.Equal([]byte(".go"),ext)
                 if match {
                     goList = append(goList,entryList[i])
-                }
+                } else {
+                    notgoList = append(goList,entryList[i])
+				}
             }
         }
     }
@@ -197,6 +200,22 @@ func EditFiles(rootDirnam, newrootDir, searchStr, replStr string) (err error) {
     	}
 	}
 
+	fmt.Printf("***** %s: notgo files *****\n", rootDirnam)
+    if len(notgoList) > 0 {
+    	for i,file := range goList {
+        	fmt.Printf("file [%d]: %s\n",i, file.Name())
+			srcFilnam := rootDirnam + "/" + file.Name()
+			destFilnam := newrootDir +"/" + file.Name()
+
+    		source, err := os.ReadFile(srcFilnam)
+    		if err != nil {return fmt.Errorf("src file open: %v", err)}
+
+			// creates if file doesn't exist
+    		err = os.WriteFile(destFilnam, source, 0666)
+    		if err != nil {return fmt.Errorf("dest file write: %v", err)}
+    	}
+	}
+
     return nil
 }
 
@@ -225,7 +244,7 @@ func EditImportContent(inData []byte, searchStr, replStr string) (out []byte, er
     outData = append(outData, inData[:idx]...)
     outData = append(outData, []byte("import (\n")...)
     outData = append(outData, outMod...)
-    outData = append(outData, []byte(")")...)
+//    outData = append(outData, []byte(")")...)
     outData = append(outData, inData[searchend:]...)
 
 	return outData, nil
@@ -253,7 +272,9 @@ func EditFileContent(in []byte, searchStr, newStr string) (out []byte, err error
 	for i:=0; i< len(lines); i++ {
 		line := lines[i]
 //		fmt.Printf("line [%d]:%s\n", i, line)
+		// comment lines
 		if len(line) > 1 && bytes.Equal(line[0:1],[]byte("//")) {continue}
+
 		sidx := bytes.Index(line, []byte(searchStr))
 		if sidx > -1 {
 			tailst := sidx+len(searchStr)
