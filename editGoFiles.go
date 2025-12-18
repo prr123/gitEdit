@@ -10,7 +10,7 @@ import (
 	"path"
 	"strings"
 
-    tree "github.com/prr123/gitEdit/gitEditLib"
+    tree "goDemo/gitEdit/gitEditLib"
     util "github.com/prr123/utility/utilLib"
 )
 
@@ -91,7 +91,7 @@ func main() {
 	replace := true
 	if len(searchStr) == 0 {replace = false}
 	if len(replStr) == 0 {replace = false}
-	if dbg {fmt.Printf("replace: %t\n", replace)}
+	if dbg {fmt.Printf("replace allowed: %t\n", replace)}
 
 	if !replace {
 		log.Printf("no search or replace string!\n")
@@ -101,10 +101,18 @@ func main() {
 	sidx := strings.Index(searchStr, "github.com")
 	if sidx> -1 {log.Fatalf("error -- searchstr includes term github!\n")}
 
-	searchStr = "\"github.com/" + searchStr
-	if dbg {fmt.Printf("actual search: '%s'\n", searchStr)}
+	git := tree.GitEdit{}
 
-    err = tree.EditFiles(rootDirnam, newRootDirnam, searchStr, replStr)
+	git.SearchStr = "github.com/" + searchStr
+	git.ReplStr = "github.com/" + replStr
+
+	git.RootDirnam = rootDirnam
+	git.NewRootDirnam = newRootDirnam
+	git.Dbg = dbg
+
+	if dbg {fmt.Printf("actual search: '%s' replace: '%s'\n", searchStr, replStr)}
+
+    err = tree.EditFiles(git)
     if err != nil {log.Fatalf("modDirs: %v\n", err)}
 
 	fmt.Println("*** success ***")
