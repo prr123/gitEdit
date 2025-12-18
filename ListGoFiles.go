@@ -7,7 +7,7 @@ import (
 	"log"
 	"path"
 
-	tree "goDev/gitEdit/gitEditLib"
+	tree "github.com/prr123/gitEdit/gitEditLib"
     cliutil "github.com/prr123/utility/utilLib"
 )
 
