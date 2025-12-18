@@ -12,6 +12,14 @@ import (
 
 type lintyp []byte
 
+type GitEdit struct {
+	RootDirnam string
+	NewRootDirnam string
+	SearchStr string
+	ReplStr string
+	Dbg bool
+}
+
 func ListDirs(rootDirnam string) (err error) {
 
 //fmt.Printf("dbg -- dir name: %s\n", rootDirnam)
@@ -100,7 +108,7 @@ func CopyDirs(rootDirnam, newrootDir string) (err error) {
     for i:=0; i< len(subDirList); i++ {
         subNam := rootDirnam + "/" + subDirList[i].Name()
 		childDirnam := newrootDir +"/" +subDirList[i].Name()
-fmt.Printf("dbg -- child[%d] name: %s\n", i, childDirnam)
+//fmt.Printf("dbg -- child[%d] name: %s\n", i, childDirnam)
         err = CopyDirs(subNam, childDirnam)
         if err != nil {fmt.Errorf("modDir <%s:%s>: %v",subNam, childDirnam, err)}
     }
@@ -131,14 +139,23 @@ fmt.Printf("dbg -- child[%d] name: %s\n", i, childDirnam)
     return nil
 }
 
-func EditFiles(rootDirnam, newrootDir, searchStr, replStr string) (err error) {
+
+func EditFiles(ed GitEdit) (err error) {
+
+//rootDirnam, newrootDir, searchStr, replStr string
+
+	dbg := ed.Dbg
+//	rootDirnam := ed.RootDirnam
+//	newRootDir := ed.NewRootDirnam
+//	searchStr := ed.SearchStr
+//	replStr := ed.ReplStr
 
 //fmt.Printf("ModDirs: %s %s\n", rootDirnam, newrootDir)
-    entryList, err := os.ReadDir(rootDirnam)
+    entryList, err := os.ReadDir(ed.RootDirnam)
     if err != nil {return fmt.Errorf("ReadDir root: %v", err)}
 //fmt.Printf("entrylist: %d\n", len(entryList))
 
-	err = os.Mkdir(newrootDir, 0777)
+	err = os.Mkdir(ed.NewRootDirnam, 0777)
     if err != nil {return fmt.Errorf("mkdir: %v", err)}
 //fmt.Printf("created new rootdir: %s\n", newrootDir)
 
@@ -165,33 +182,40 @@ func EditFiles(rootDirnam, newrootDir, searchStr, replStr string) (err error) {
                 if match {
                     goList = append(goList,entryList[i])
                 } else {
-                    notgoList = append(goList,entryList[i])
+                    notgoList = append(notgoList,entryList[i])
 				}
             }
         }
     }
 
-	fmt.Printf("***** %s: sub dir list *****\n", rootDirnam)
+	if dbg {fmt.Printf("***** %s: sub dir list *****\n", ed.RootDirnam)}
 // replace with path
     for i:=0; i< len(subDirList); i++ {
-        subNam := rootDirnam + "/" + subDirList[i].Name()
-		childDirnam := newrootDir +"/" +subDirList[i].Name()
+        subNam := ed.RootDirnam + "/" + subDirList[i].Name()
+		childDirnam := ed.NewRootDirnam +"/" +subDirList[i].Name()
 //fmt.Printf("dbg -- child[%d] name: %s\n", i, childDirnam)
-        err = EditFiles(subNam, childDirnam, searchStr, replStr)
+		ngit:=GitEdit{
+			RootDirnam: subNam,
+			NewRootDirnam: childDirnam,
+			Dbg: ed.Dbg,
+			SearchStr: ed.SearchStr,
+			ReplStr: ed.ReplStr,
+		}
+        err = EditFiles(ngit)
         if err != nil {fmt.Errorf("modDir <%s:%s>: %v",subNam, childDirnam, err)}
     }
 
-	fmt.Printf("***** %s: go files *****\n", rootDirnam)
+	if dbg {fmt.Printf("***** %s: go files *****\n", ed.RootDirnam)}
     if len(goList) > 0 {
     	for i,file := range goList {
-        	fmt.Printf("file [%d]: %s\n",i, file.Name())
-			srcFilnam := rootDirnam + "/" + file.Name()
-			destFilnam := newrootDir +"/" + file.Name()
+        	if dbg {fmt.Printf("file [%d]: %s\n",i, file.Name())}
+			srcFilnam := ed.RootDirnam + "/" + file.Name()
+			destFilnam := ed.NewRootDirnam +"/" + file.Name()
 
     		source, err := os.ReadFile(srcFilnam)
     		if err != nil {return fmt.Errorf("src file open: %v", err)}
 
-			dest, err := EditImportContent(source, searchStr, replStr)
+			dest, err := EditImportContent(source, ed.SearchStr, ed.ReplStr)
     		if err != nil {return fmt.Errorf("EditFile: %v", err)}
 
 			// creates if file doesn't exist
@@ -200,12 +224,12 @@ func EditFiles(rootDirnam, newrootDir, searchStr, replStr string) (err error) {
     	}
 	}
 
-	fmt.Printf("***** %s: notgo files *****\n", rootDirnam)
+	if dbg {fmt.Printf("***** %s: notgo files *****\n", ed.RootDirnam)}
     if len(notgoList) > 0 {
-    	for i,file := range goList {
-        	fmt.Printf("file [%d]: %s\n",i, file.Name())
-			srcFilnam := rootDirnam + "/" + file.Name()
-			destFilnam := newrootDir +"/" + file.Name()
+    	for i,file := range notgoList {
+        	if dbg {fmt.Printf("file [%d]: %s\n",i, file.Name())}
+			srcFilnam := ed.RootDirnam + "/" + file.Name()
+			destFilnam := ed.NewRootDirnam +"/" + file.Name()
 
     		source, err := os.ReadFile(srcFilnam)
     		if err != nil {return fmt.Errorf("src file open: %v", err)}
@@ -234,8 +258,8 @@ func EditImportContent(inData []byte, searchStr, replStr string) (out []byte, er
     searchend:= idx +idxend
     if dbg {fmt.Printf("dbg -- search [%d:%d] %s\n", searchst, searchend, inData[searchst:searchend])}
 
-    fmt.Printf("***** import: ***\n")
-    fmt.Printf("%s", inData[searchst:searchend])
+//    fmt.Printf("***** import: ***\n")
+//    fmt.Printf("%s", inData[searchst:searchend])
 
     outMod, err := EditFileContent(inData[searchst:searchend], searchStr, replStr)
     if err != nil {return nil, fmt.Errorf("EditFileContent: %v", err)}
