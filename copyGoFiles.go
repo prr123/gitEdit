@@ -9,7 +9,7 @@ import (
 	"os"
 	"path"
 
-    tree "goDev/gitEdit/gitEditLib"
+    tree "github.com/prr123/gitEdit/gitEditLib"
     util "github.com/prr123/utility/utilLib"
 )
 
